@@ -1,131 +1,124 @@
-[Email Scraper](https://apify.com/dominic-quaiser/email-scraper?fpr=data)
+[Email Scraper](https://apify.com/c0nst/email-scraper?fpr=data)
 
 # Email Scraper
 
-A powerful Apify Actor designed to crawl websites and extract email addresses using advanced detection methods. Simply provide a list of starting URLs, configure crawling depth and behavior, and the actor will automatically discover and extract email addresses from across the website—even those hidden behind obfuscation or CloudFlare protection.
+Extract unique email addresses from a list of websites. The scraper visits each URL, follows internal links, and returns one result per site with all emails found — duplicates removed, known placeholder and schema emails excluded so you only pay for real results.
 
-⚠️ **Pre-Release Version**: This is a release candidate. Features are complete but may contain bugs. Feedback and issue reports are welcome!
+## What does Email Scraper do?
 
-## 🚀 Features
+**Email Scraper** visits the URLs you provide, crawls their internal pages, and extracts every email address found in the raw HTML — including those inside `mailto:` links, plain text, and hidden fields. Results are grouped by site, deduplicated, and stored in a structured dataset you can download as JSON, CSV, or Excel.
 
-- **Intelligent Email Discovery**: Finds email addresses using multiple sophisticated detection methods, including:
+Running on [Apify](https://apify.com/) gives you automatic proxy rotation, scheduling, API access, and cloud storage — no infrastructure to manage.
 
-- Standard text pattern matching
-- Mailto links extraction
-- CloudFlare-protected emails
-- RTL (Right-to-Left) Unicode obfuscation
-- Common text obfuscation patterns
-- **Configurable Crawl Depth**: Control how deep the crawler follows links from your starting URLs (0-10 levels).
-- **Domain-Focused or Broad Crawling**: Choose to stay on the same domain or explore external links.
-- **Lightweight HTTP Crawling**: Fast, efficient method using HTTP requests without the overhead of a browser.
-- **Anti-Detection Features**: Built-in measures to avoid blocking, including user agent rotation, request delays, and robots.txt compliance.
-- **Proxy Support**: Integrates seamlessly with Apify's proxy service for IP rotation and avoiding rate limits.
-- **Structured JSON Output**: Delivers clean, well-structured data with full context about where and how each email was discovered.
+## Why use Email Scraper?
 
-## 📥 Input Parameters
+- **Lead generation** — collect contact emails from a list of target company websites
+- **Sales prospecting** — find decision-maker emails from directories or partner pages
+- **Data enrichment** — augment a list of domains with their publicly listed contact addresses
+- **Outreach campaigns** — build verified email lists from niche industry sites
+- **Research** — map contact information across a set of websites at scale
 
-Configure the actor's behavior using these fields in the Apify Console Input tab or via API:
+## How to use Email Scraper
 
-| Field | Type | Description | Default | Required |
-| --- | --- | --- | --- | --- |
-| `start_urls` | Array | The URLs to start crawling from. The scraper will extract emails from these pages and follow links up to the specified depth. | `[{ "url": "https://www.katjes.de/" }]` | Yes |
-| `max_depth` | Integer | Maximum depth of links to follow from start URLs. 0 = only start URLs, 1 = start URLs + one level of links, etc. Range: 0-10. | `2` | No |
-| `stay_on_domain` | Boolean | Only follow links that stay on the same domain as each start URL. When enabled, the crawler won't visit external sites. | `true` | No |
-| `max_concurrent_pages` | Integer | Maximum number of pages to process simultaneously. Leave empty for auto-tuning (recommended: 50). Range: 1-100. | Auto | No |
-| `max_pages_per_domain` | Integer | Maximum number of pages to crawl from each individual domain. Leave empty for unlimited. This limit applies separately to each domain. | `200` | No |
-| `max_requests_per_run` | Integer | Maximum number of pages to crawl globally across all domains. Leave empty for unlimited. | Unlimited | No |
-| `request_delay_min` | Number | Minimum delay in seconds between requests to avoid detection. Recommended: 1-2 seconds. Range: 0-60. | `1` | No |
-| `request_delay_max` | Number | Maximum delay in seconds between requests. A random delay between min and max will be used. Range: 0-60. | `3` | No |
-| `respect_robots_txt` | Boolean | Honor robots.txt directives including crawl delays and disallowed paths. | `false` | No |
-| `rotate_user_agents` | Boolean | Use a pool of realistic user agents to appear as different users. | `true` | No |
-| `proxy_configuration` | Object | Proxy settings to avoid being blocked. Apify Proxy is recommended for large crawls. | `{}` | No |
+1. Sign in to [Apify Console](https://console.apify.com) and open the Actor.
+2. Paste your target URLs into the **Start URLs** field.
+3. Click **Start** and wait for the run to finish.
+4. Open the **Output** tab to view and download your results.
 
-## 📤 Output Data Structure
+## Input
 
-The actor outputs one record per unique email address found during the crawl.
+| Field | Type | Description |
+| --- | --- | --- |
+| `startUrls` | array | URLs to scrape (required) |
 
-### Example Output
+Example:
+
+```
+{
+    "startUrls": [
+        { "url": "https://acme.com" },
+        { "url": "https://globex.com" },
+        { "url": "https://initech.com" }
+    ]
+}
+```
+
+## Output
+
+One dataset row is produced per input URL, containing all unique emails found across every page crawled under that site:
 
 ```
 [
-  {
-    "email": "info@example-company.com",
-    "found_on_url": "https://www.example-company.com/contact",
-    "start_url": "https://www.example-company.com",
-    "extraction_method": "mailto_link",
-    "depth": 1
-  },
-  {
-    "email": "support@example-company.com",
-    "found_on_url": "https://www.example-company.com/about",
-    "start_url": "https://www.example-company.com",
-    "extraction_method": "text_standard",
-    "depth": 1
-  },
-  {
-    "email": "sales@example-company.com",
-    "found_on_url": "https://www.example-company.com/impressum",
-    "start_url": "https://www.example-company.com",
-    "extraction_method": "cloudflare_protected",
-    "depth": 2
-  }
+    {
+        "startUrl": "https://acme.com",
+        "emails": [
+            "sales@acme.com",
+            "support@acme.com",
+            "ceo@acme.com"
+        ],
+        "emailCount": 3,
+        "pagesScraped": 12,
+        "scrapedAt": "2026-04-13T20:00:00.000Z"
+    },
+    {
+        "startUrl": "https://globex.com",
+        "emails": [
+            "contact@globex.com"
+        ],
+        "emailCount": 1,
+        "pagesScraped": 8,
+        "scrapedAt": "2026-04-13T20:00:05.000Z"
+    }
 ]
 ```
 
-## 📧 Extraction Methods Explained
+You can download the dataset in various formats such as JSON, HTML, CSV, or Excel from the **Output** tab or via the Apify API.
 
-The actor uses multiple sophisticated techniques to find email addresses, even when websites try to hide them from bots:
+## Data table
 
-| Method | Description |
+| Field | Format | Description |
+| --- | --- | --- |
+| `startUrl` | URL | The input URL this result belongs to |
+| `emails` | array | Unique, lowercased email addresses found across all crawled pages |
+| `emailCount` | number | Total number of unique emails found |
+| `pagesScraped` | number | Number of pages that contained at least one email |
+| `scrapedAt` | ISO date | Timestamp of when post-processing completed |
+
+## Pricing
+
+This Actor uses **Pay per event** pricing — you are charged per site that returns at least one email. Sites that are crawled but yield no results are free.
+
+| Event | When charged |
 | --- | --- |
-| **`mailto_link`** | Email addresses found in standard `mailto:` links in the HTML. |
-| **`text_standard`** | Email addresses found in plain text using standard pattern matching. |
-| **`text_obfuscated`** | Email addresses that use common text obfuscation like "info [at] example [dot] com". |
-| **`cloudflare_protected`** | Email addresses protected by CloudFlare's email obfuscation that are decoded from the page. |
-| **`rtl_obfuscated`** | Email addresses hidden using Right-to-Left (RTL) Unicode characters to confuse simple scrapers. |
+| `site-scraped` | Once per input URL that produced emails |
 
-### 💡 Performance Tips
+Your cost scales with useful output, not with how many pages were crawled. A run over 10 sites where 7 return emails = 7 charges.
 
-- **For small sites**: Keep the default settings for optimal speed.
-- **For large crawls**: Use proxy rotation to avoid blocking and rate limits.
-- **Memory constraints**: Set `max_concurrent_pages` to a lower value (2-5) if running on limited memory.
-- **Faster crawling**: Increase `max_concurrent_pages` if you have sufficient resources.
+## Advanced settings
 
-## 🎯 Use Cases
+For most use cases the defaults work well. If you need to fine-tune crawl behaviour, the following settings are available under **Advanced settings** in the Console:
 
-- **Lead Generation**: Build targeted contact lists for sales and marketing outreach.
-- **Competitive Research**: Discover contact information for companies in your industry.
-- **Data Enrichment**: Enhance existing company databases with email addresses.
-- **Market Analysis**: Gather communication channels for businesses in specific sectors or regions.
-- **Recruitment**: Find contact emails for potential candidates or hiring managers.
-- **Partnership Development**: Identify contact points for potential business partnerships.
+| Field | Default | Description |
+| --- | --- | --- |
+| `maxDepth` | `1` | How many link-levels deep to follow. `0` = start URL only, `1` = all directly linked pages |
+| `maxRequestsPerSite` | `100` | Max pages crawled per site. `0` = unlimited |
 
-## 🛠️ Maintainer
+**Depth guide:**
 
-- **Author**: Dominic M. Quaiser
-- **Contact**: [mail@dominic-quaiser.io](mailto:mail@dominic-quaiser.io)
-- **Website**: [dominic-quaiser.io](https://dominic-quaiser.io/)
+- `0` — use when your URLs already point at a contact or about page
+- `1` — recommended for most sites; covers Contact, About, Team pages linked from the homepage
+- `2` — thorough crawl including blog posts, product pages and sub-sections; runs take longer
 
----
+## FAQ and disclaimers
 
-## 🔧 Troubleshooting
+**Is this legal?**
+Email Scraper only collects data that is publicly visible in the HTML of websites you provide. You are responsible for ensuring your use complies with the target site's Terms of Service, GDPR, CAN-SPAM, and any other applicable laws.
 
-### No Emails Found
+**Why are some emails missing?**
+This Actor makes plain HTTP requests without running JavaScript. Emails injected into the page by JS (contact forms, dynamic "mailto" links, obfuscation scripts) won't be captured. If a site's Contact page scrapes clean but returns no emails, this is the likely cause. A future v2 will handle JS-rendered content.
 
-- Check if the website contains any publicly visible emails
-- Try increasing `max_depth` to crawl more pages
-- Verify that `stay_on_domain` isn't preventing you from reaching contact pages on subdomains
-- Check if the website might be blocking the scraper (try enabling proxies)
+**I'm seeing placeholder or test emails in the results.**
+Common false positives (e.g. `user@example.com`, schema.org addresses, image filenames) are filtered out automatically. If you encounter others, open an issue.
 
-### Actor Running Out of Memory
-
-- Decrease `max_concurrent_pages` to process fewer pages simultaneously
-- Use `max_requests_per_run` to limit the total crawl size
-- Upgrade to a larger memory tier on Apify
-
-### Getting Blocked by Websites
-
-- Enable proxy rotation via `proxy_configuration`
-- Increase `request_delay_min` and `request_delay_max`
-- Enable `rotate_user_agents` and `use_stealth_mode`
-- Consider enabling `respect_robots_txt` to honor crawl delays
+**Need a custom solution?**
+Open an issue in the repository or contact us for enterprise scraping requirements.
